@@ -1,0 +1,43 @@
+{
+  "format": 1,
+  "title": {
+    "en": "DSH Link",
+    "zh": "DSH Link"
+  },
+  "description": {
+    "en": "Windows serial, ADB, SSH tunnel and command bridge for DeepSeek Harness.",
+    "zh": "把 Windows 串口、ADB、SSH 隧道和命令执行接入 DSH 的板端调试桥。"
+  },
+  "plugins": [
+    {
+      "name": "dsh-board-link",
+      "title": {
+        "en": "DSH Link",
+        "zh": "DSH Link"
+      },
+      "description": {
+        "en": "Open Windows COM ports, talk to ADB devices, run Windows commands and manage the SSH tunnel from DSH. Includes a native WebView2 board console and live serial/ADB output.",
+        "zh": "在 DSH 里打开 Windows 串口、调试 ADB 设备、执行 Windows 命令并管理 SSH 隧道；附带 WebView2 原生板端控制台和串口/ADB 实时输出。"
+      },
+      "icon": "icons/dsh-board-link.png",
+      "author": "QAQ-cmd",
+      "homepage": "https://github.com/QAQ-cmd/dsh-board-link#readme",
+      "repository": {
+        "url": "https://github.com/QAQ-cmd/dsh-board-link",
+        "directory": "plugin/dsh-board-link"
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1792569978,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/QAQ-cmd/dsh-board-link",
+            "commit": "b0a2a585104eef5c8bc130bfafa69d497e3a0c5b",
+            "path": "plugin/dsh-board-link"
+          }
+        }
+      ]
+    }
+  ]
+}
