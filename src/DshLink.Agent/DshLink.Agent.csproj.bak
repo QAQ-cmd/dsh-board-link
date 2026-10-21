@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <AssemblyName>dsh-link</AssemblyName>
+    <RootNamespace>DshLink</RootNamespace>
+    <Version>0.1.0</Version>
+    <Description>Windows bridge for DeepSeek Harness: SSH tunnels, serial and ADB over HTTP.</Description>
+    <ApplicationIcon>Assets\dsh-link.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="Ui\index.html" />
+    <EmbeddedResource Include="Ui\index.html" LogicalName="DshLink.Ui.index.html" />
+    <EmbeddedResource Include="..\..\plugin\dsh-board-link\package.json" LogicalName="DshLink.Plugin.package.json" />
+    <EmbeddedResource Include="..\..\plugin\dsh-board-link\cordis.patch.yml" LogicalName="DshLink.Plugin.cordis.patch.yml" />
+    <EmbeddedResource Include="..\..\plugin\dsh-board-link\lib\index.js" LogicalName="DshLink.Plugin.lib.index.js" />
+    <EmbeddedResource Include="..\..\plugin\dsh-board-link\lib\client.js" LogicalName="DshLink.Plugin.lib.client.js" />
+    <EmbeddedResource Include="..\..\plugin\dsh-board-link\lib\ui-client.js" LogicalName="DshLink.Plugin.lib.uiclient.js" />
+    <EmbeddedResource Include="..\..\plugin\dsh-board-link\README.md" LogicalName="DshLink.Plugin.README.md" />
+    <EmbeddedResource Include="..\..\plugin\dsh-board-link\README.zh.md" LogicalName="DshLink.Plugin.README.zh.md" WithCulture="false" />
+    <EmbeddedResource Include="..\..\plugin\dsh-board-link\LICENSE" LogicalName="DshLink.Plugin.LICENSE" />
+  </ItemGroup>
+
+</Project>

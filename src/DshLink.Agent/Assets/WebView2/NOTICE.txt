@@ -1,0 +1,7 @@
+﻿Microsoft.Web.WebView2 1.0.2592.51
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+The WebView2 SDK assemblies and WebView2Loader.dll in this directory are
+redistributed with dsh-link under the Microsoft WebView2 SDK license.
+They were taken from a locally installed copy of the SDK (CODESYS 3.5.21.20);
+the WebView2 Evergreen Runtime must be installed on the target machine.

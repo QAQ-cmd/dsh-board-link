@@ -1,0 +1,9 @@
+# Bundle patch for dsh-board-link. The agent is reached through the SSH remote forward
+# created by dsh-link: server 127.0.0.1:18765 -> Windows 127.0.0.1:8765.
+# Override baseUrl in the profile's cordis.patch.yml if you change the ports.
+- insert:
+    - id: board-link
+      name: 'dsh-board-link'
+      config:
+        baseUrl: 'http://127.0.0.1:18765'
+        timeoutMs: 15000

@@ -1,0 +1,91 @@
+{
+  "agent": {
+    "listen": "127.0.0.1",
+    "port": 8765,
+    "token": "REPLACE_WITH_A_LONG_RANDOM_TOKEN",
+    "maxBodyBytes": 134217728
+  },
+  "tunnel": {
+    "enabled": true,
+    "provider": "ssh",
+    "ssh": {
+      "target": "user@server.example.com",
+      "port": 22,
+      "identityFile": "C:\\Users\\you\\.ssh\\id_ed25519",
+      "knownHostsFile": "",
+      "strictHostKeyChecking": "accept-new",
+      "connectTimeoutSeconds": 10,
+      "serverAliveIntervalSeconds": 15,
+      "serverAliveCountMax": 3,
+      "sshPath": "ssh",
+      "extraOptions": {}
+    },
+    "forwards": [
+      {
+        "name": "dsh-web",
+        "direction": "local",
+        "listenHost": "127.0.0.1",
+        "listenPort": 60573,
+        "targetHost": "127.0.0.1",
+        "targetPort": 60573
+      },
+      {
+        "name": "board-link",
+        "direction": "remote",
+        "listenHost": "127.0.0.1",
+        "listenPort": 18765,
+        "targetHost": "127.0.0.1",
+        "targetPort": 8765
+      }
+    ],
+    "restart": {
+      "enabled": true,
+      "initialDelayMs": 1000,
+      "maxDelayMs": 30000
+    }
+  },
+  "serial": {
+    "maxSessions": 8,
+    "bufferBytes": 1048576,
+    "readChunkBytes": 4096,
+    "idleTimeoutSeconds": 0
+  },
+  "adb": {
+    "path": "adb",
+    "defaultTimeoutMs": 30000,
+    "maxOutputBytes": 1048576,
+    "maxTransferBytes": 67108864
+  },
+  "exec": {
+    "enabled": false,
+    "allowAny": false,
+    "allowShell": false,
+    "cmdPath": "cmd.exe",
+    "powerShellPath": "powershell.exe",
+    "allowedExecutables": [
+      "cmd.exe",
+      "powershell.exe",
+      "pwsh.exe",
+      "adb.exe",
+      "fastboot.exe",
+      "python.exe",
+      "py.exe",
+      "esptool.py",
+      "rkdeveloptool.exe",
+      "upgrade_tool.exe"
+    ],
+    "allowedWorkingRoots": [],
+    "defaultTimeoutMs": 120000,
+    "maxTimeoutMs": 600000,
+    "maxOutputBytes": 4194304,
+    "maxFileBytes": 67108864,
+    "maxJobs": 8,
+    "jobRetentionSeconds": 600
+  },
+  "logging": {
+    "directory": "",
+    "level": "information",
+    "maxFileBytes": 5242880,
+    "retainedFiles": 3
+  }
+}

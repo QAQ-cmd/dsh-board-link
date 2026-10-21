@@ -1,0 +1,984 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DSH Link 控制台</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235b8cff'/%3E%3Ctext x='32' y='45' font-family='Segoe UI,Arial' font-size='28' font-weight='700' text-anchor='middle' fill='white'%3EDS%3C/text%3E%3C/svg%3E">
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #0d1015;
+  --bg-soft: #12161d;
+  --panel: #171c24;
+  --panel-2: #1c222c;
+  --line: #2a3341;
+  --line-soft: #222a36;
+  --text: #e8edf5;
+  --muted: #93a0b4;
+  --faint: #68778d;
+  --accent: #5b8cff;
+  --accent-2: #7aa2ff;
+  --green: #3ddc97;
+  --red: #ff6473;
+  --amber: #f2b84b;
+  --mono: "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+  --radius: 14px;
+  --shadow: 0 18px 50px rgba(0,0,0,.35);
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --bg: #f4f6fa;
+    --bg-soft: #eef1f7;
+    --panel: #ffffff;
+    --panel-2: #f7f9fc;
+    --line: #d9e0ea;
+    --line-soft: #e8edf4;
+    --text: #17202e;
+    --muted: #5e6d82;
+    --faint: #8491a5;
+    --shadow: 0 16px 40px rgba(30,45,70,.09);
+  }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: radial-gradient(1200px 700px at 18% -10%, rgba(91,140,255,.13), transparent 55%), var(--bg);
+  color: var(--text);
+  font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: var(--accent-2); text-decoration: none; }
+.hidden { display: none !important; }
+.mono { font-family: var(--mono); }
+.muted { color: var(--muted); }
+.faint { color: var(--faint); }
+.small { font-size: 12px; }
+.nowrap { white-space: nowrap; }
+
+.login {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+}
+.login-card {
+  width: min(460px, 100%);
+  background: linear-gradient(180deg, var(--panel), var(--bg-soft));
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: var(--shadow);
+}
+.login-card h1 { margin: 0 0 4px; font-size: 26px; letter-spacing: -.02em; }
+.login-card p { color: var(--muted); margin: 0 0 20px; }
+.login-card label { display: block; font-size: 12px; color: var(--muted); margin: 14px 0 6px; }
+.login-card input { width: 100%; height: 44px; }
+.login-card button { width: 100%; height: 44px; margin-top: 18px; }
+.login-hint { margin-top: 16px; font-size: 12px; color: var(--faint); line-height: 1.7; }
+
+.app { min-height: 100%; display: flex; flex-direction: column; }
+.topbar {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.brand { display: flex; align-items: center; gap: 11px; min-width: 210px; }
+.logo {
+  width: 34px; height: 34px; border-radius: 10px;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--accent), #9b7bff);
+  color: white; font-weight: 800; font-size: 13px; letter-spacing: -.04em;
+  box-shadow: 0 6px 20px rgba(91,140,255,.35);
+}
+.brand h1 { font-size: 16px; margin: 0; letter-spacing: -.01em; }
+.brand small { display: block; color: var(--faint); font-size: 11px; }
+.top-status { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  border: 1px solid var(--line); background: var(--panel);
+  border-radius: 999px; padding: 5px 10px; font-size: 12px; color: var(--muted);
+  white-space: nowrap;
+}
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); box-shadow: 0 0 0 3px color-mix(in srgb, var(--faint) 18%, transparent); }
+.dot.ok { background: var(--green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 18%, transparent); }
+.dot.warn { background: var(--amber); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 18%, transparent); }
+.dot.bad { background: var(--red); box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 18%, transparent); }
+.top-actions { display: flex; gap: 8px; }
+.shell { flex: 1; display: grid; grid-template-columns: 214px minmax(0, 1fr); min-height: 0; }
+.sidebar {
+  border-right: 1px solid var(--line);
+  padding: 18px 12px;
+  display: flex; flex-direction: column; gap: 4px;
+  background: color-mix(in srgb, var(--bg-soft) 60%, transparent);
+}
+.nav-btn {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; border: 0; background: transparent; color: var(--muted);
+  padding: 10px 12px; border-radius: 10px; text-align: left; font-size: 13px;
+}
+.nav-btn:hover { background: var(--panel); color: var(--text); }
+.nav-btn.active { background: color-mix(in srgb, var(--accent) 14%, var(--panel)); color: var(--text); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent); }
+.nav-ico { width: 20px; text-align: center; opacity: .9; }
+.sidebar-foot { margin-top: auto; padding: 10px 12px; color: var(--faint); font-size: 11px; overflow-wrap: anywhere; }
+.main { padding: 24px clamp(18px, 3vw, 34px) 60px; overflow: auto; }
+.panel { max-width: 1180px; margin: 0 auto; }
+.panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.panel-head h2 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
+.panel-head p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+.grid { display: grid; gap: 14px; }
+.grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.card {
+  background: linear-gradient(180deg, var(--panel), color-mix(in srgb, var(--panel) 75%, var(--bg)));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  min-width: 0;
+}
+.card h3 { margin: 0 0 8px; font-size: 13px; color: var(--muted); font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+.card .big { font-size: 22px; font-weight: 650; letter-spacing: -.02em; margin: 2px 0 4px; }
+.card .sub { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.card.clickable { cursor: pointer; transition: border-color .15s, transform .15s; }
+.card.clickable:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); transform: translateY(-1px); }
+.section { margin-top: 18px; }
+.section h3 { font-size: 14px; margin: 0 0 10px; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
+.form-grid .full { grid-column: 1 / -1; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field > span { font-size: 12px; color: var(--muted); }
+.field small { color: var(--faint); font-size: 11px; }
+input, select, textarea {
+  border: 1px solid var(--line);
+  background: var(--bg-soft);
+  border-radius: 9px;
+  padding: 9px 11px;
+  outline: none;
+  min-width: 0;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent); }
+textarea { resize: vertical; min-height: 82px; font-family: var(--mono); font-size: 12px; line-height: 1.5; }
+input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px; }
+.check { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 13px; }
+.check span { color: var(--muted); font-size: 12px; }
+.btn {
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+  border-radius: 9px; padding: 8px 13px; font-size: 13px; display: inline-flex; align-items: center; gap: 7px;
+  white-space: nowrap;
+}
+.btn:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { color: var(--red); border-color: color-mix(in srgb, var(--red) 40%, var(--line)); }
+.btn.ghost { background: transparent; }
+.btn.sm { padding: 5px 9px; font-size: 12px; }
+.row { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.row.end { justify-content: flex-end; }
+.spread { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.pre {
+  background: #090c11; color: #cfe1ff; border: 1px solid var(--line);
+  border-radius: 10px; padding: 12px; overflow: auto; max-height: 360px;
+  font-family: var(--mono); font-size: 12px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere;
+}
+@media (prefers-color-scheme: light) { .pre { background: #0f1620; } }
+.table-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 11px; }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+th, td { padding: 9px 11px; border-bottom: 1px solid var(--line-soft); text-align: left; vertical-align: middle; }
+th { color: var(--muted); font-weight: 600; background: var(--panel-2); font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; }
+tr:last-child td { border-bottom: 0; }
+td .mono, td code { font-size: 12px; }
+.badge { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 2px 8px; font-size: 11px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.badge.ok { color: var(--green); border-color: color-mix(in srgb, var(--green) 35%, var(--line)); background: color-mix(in srgb, var(--green) 8%, transparent); }
+.badge.bad { color: var(--red); border-color: color-mix(in srgb, var(--red) 35%, var(--line)); background: color-mix(in srgb, var(--red) 8%, transparent); }
+.badge.warn { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 35%, var(--line)); background: color-mix(in srgb, var(--amber) 8%, transparent); }
+.badge.run { color: var(--accent-2); border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.terminal {
+  background: #090c11; border: 1px solid var(--line); border-radius: 11px;
+  min-height: 260px; max-height: 420px; overflow: auto; padding: 12px;
+  font-family: var(--mono); font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere;
+  color: #d7e7ff;
+}
+.terminal .sys { color: #7d90a8; }
+.split { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr); gap: 14px; align-items: start; }
+.kv { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 6px 12px; font-size: 12.5px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; overflow-wrap: anywhere; }
+.toast {
+  position: fixed; right: 18px; bottom: 18px; z-index: 100;
+  background: var(--panel); border: 1px solid var(--line); color: var(--text);
+  border-radius: 11px; padding: 11px 15px; box-shadow: var(--shadow); max-width: min(440px, calc(100vw - 36px));
+  font-size: 13px; opacity: 0; transform: translateY(8px); pointer-events: none; transition: .18s;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.err { border-color: color-mix(in srgb, var(--red) 50%, var(--line)); }
+.login-error { color: var(--red); font-size: 12.5px; min-height: 18px; margin-top: 8px; }
+.hint-box { border: 1px dashed var(--line); border-radius: 11px; padding: 12px; color: var(--muted); font-size: 12.5px; line-height: 1.7; background: var(--bg-soft); }
+.copy-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.copy-row code { flex: 1; background: var(--bg-soft); border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; overflow: auto; font-size: 11.5px; }
+.tabs { display: flex; gap: 3px; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+.tab { border: 0; background: transparent; color: var(--muted); padding: 9px 12px; border-bottom: 2px solid transparent; font-size: 12.5px; }
+.tab.active { color: var(--text); border-bottom-color: var(--accent); }
+.tab:hover { color: var(--text); }
+.help { color: var(--faint); font-size: 11.5px; line-height: 1.6; }
+@media (max-width: 980px) {
+  .shell { grid-template-columns: 1fr; }
+  .sidebar { flex-direction: row; overflow: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 10px; }
+  .nav-btn { width: auto; white-space: nowrap; }
+  .sidebar-foot { display: none; }
+  .grid.four, .grid.three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .split { grid-template-columns: 1fr; }
+  .topbar { flex-wrap: wrap; height: auto; padding: 12px 14px; }
+  .top-status { order: 3; width: 100%; }
+}
+@media (max-width: 620px) {
+  .grid.two, .grid.three, .grid.four, .form-grid { grid-template-columns: 1fr; }
+  .main { padding: 16px 12px 40px; }
+}
+</style>
+</head>
+<body>
+
+<div id="login" class="login">
+  <div class="login-card">
+    <h1>DSH Link</h1>
+    <p>Windows 板端实验台控制面板。输入 Agent token 进入。</p>
+    <label for="login-token">Agent token</label>
+    <input id="login-token" type="password" autocomplete="off" placeholder="agent.token">
+    <div id="login-error" class="login-error"></div>
+    <button id="login-btn" class="btn primary">进入控制台</button>
+    <div class="login-hint">
+      在 Windows 上运行 <span class="mono">dsh-link.exe ui --config &lt;config&gt;</span> 可自动打开带 token 的地址。
+      也可以用 <span class="mono">dsh-link.exe print-token</span> 查看 token。
+    </div>
+  </div>
+</div>
+
+<div id="app" class="app hidden">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">DS</div>
+      <div><h1>DSH Link</h1><small id="hostname">Windows board lab</small></div>
+    </div>
+    <div class="top-status">
+      <span class="pill"><span id="tunnel-dot" class="dot"></span><span id="tunnel-text">tunnel</span></span>
+      <span class="pill"><span id="agent-dot" class="dot"></span><span id="agent-text">agent</span></span>
+      <span class="pill" id="version-pill">v0.1.0</span>
+    </div>
+    <div class="top-actions">
+      <button class="btn sm" onclick="refreshAll()">刷新</button>
+      <button class="btn sm primary" id="tunnel-action" onclick="toggleTunnel()">启动隧道</button>
+      <button class="btn sm danger" onclick="shutdownAgent()">退出服务</button>
+      <button class="btn sm ghost" onclick="logout()">退出登录</button>
+    </div>
+  </header>
+  <div class="shell">
+    <nav class="sidebar">
+      <button class="nav-btn active" data-tab="overview" onclick="switchTab('overview')"><span class="nav-ico">◈</span>概览</button>
+      <button class="nav-btn" data-tab="tunnel" onclick="switchTab('tunnel')"><span class="nav-ico">⇄</span>隧道 / DSH</button>
+      <button class="nav-btn" data-tab="serial" onclick="switchTab('serial')"><span class="nav-ico">◫</span>串口</button>
+      <button class="nav-btn" data-tab="adb" onclick="switchTab('adb')"><span class="nav-ico">⌁</span>ADB</button>
+      <button class="nav-btn" data-tab="windows" onclick="switchTab('windows')"><span class="nav-ico">▣</span>Windows 控制</button>
+      <button class="nav-btn" data-tab="files" onclick="switchTab('files')"><span class="nav-ico">▤</span>文件</button>
+      <button class="nav-btn" data-tab="plugin" onclick="switchTab('plugin')"><span class="nav-ico">⌘</span>DSH 插件</button>
+      <button class="nav-btn" data-tab="logs" onclick="switchTab('logs')"><span class="nav-ico">≡</span>日志</button>
+      <button class="nav-btn" data-tab="device-logs" onclick="switchTab('device-logs')"><span class="nav-ico">▤</span>串口 / ADB 日志</button>
+      <div class="sidebar-foot" id="config-path"></div>
+    </nav>
+    <main class="main">
+
+      <section class="panel" data-panel="overview">
+        <div class="panel-head"><div><h2>概览</h2><p>Windows 侧的隧道、串口、ADB 和命令执行状态。</p></div><button class="btn" onclick="refreshAll()">刷新状态</button></div>
+        <div class="grid four" id="overview-cards"></div>
+        <div class="grid two section">
+          <div class="card"><h3>快速操作</h3><div class="row"><button class="btn" onclick="switchTab('serial')">打开串口</button><button class="btn" onclick="switchTab('adb')">ADB</button><button class="btn" onclick="switchTab('windows')">运行命令</button><button class="btn" onclick="switchTab('plugin')">插件配置</button></div><div class="help" style="margin-top:12px">这个页面直接调用本机 Agent，不经过服务器。</div></div>
+          <div class="card"><h3>最近隧道日志</h3><div class="pre" id="overview-log" style="max-height:150px">—</div></div>
+        </div>
+      </section>
+
+      <section class="panel hidden" data-panel="tunnel">
+        <div class="panel-head"><div><h2>隧道 / DSH</h2><p>一条出站 SSH 同时转发服务器 DSH 到本地浏览器，并把本 Agent 反向暴露给服务器插件。</p></div><div class="row"><button class="btn" onclick="tunnelAction('stop')">停止</button><button class="btn primary" onclick="tunnelAction('start')">启动</button></div></div>
+        <div class="split">
+          <div class="card">
+            <h3>SSH 与端口</h3>
+            <form id="tunnel-form" onsubmit="saveTunnel(event)">
+              <div class="form-grid">
+                <label class="field full"><span>启用隧道</span><label class="check"><input id="t-enabled" type="checkbox"> 启动 Agent 时自动连接</label></label>
+                <label class="field"><span>SSH 目标</span><input id="t-target" placeholder="user@server"></label>
+                <label class="field"><span>SSH 端口</span><input id="t-sshport" type="number" min="1" max="65535"></label>
+                <label class="field full"><span>私钥路径</span><input id="t-identity" placeholder="C:\Users\you\.ssh\id_ed25519"></label>
+                <label class="field full"><span>known_hosts 文件（可选）</span><input id="t-knownhosts" placeholder="留空使用 OpenSSH 默认"></label>
+                <label class="field"><span>Host key 检查</span><select id="t-strict"><option value="accept-new">accept-new</option><option value="yes">yes</option><option value="no">no（不推荐）</option></select></label>
+                <label class="field"><span>断线自动重连</span><label class="check"><input id="t-restart" type="checkbox"> 自动重启 SSH</label></label>
+                <div class="full hint-box">Local：Windows 本地端口 → 服务器 DSH。Remote：服务器端口 → Windows Agent。</div>
+                <label class="field"><span>本地 DSH 端口</span><input id="t-localport" type="number" min="1" max="65535"></label>
+                <label class="field"><span>服务器 DSH 端口</span><input id="t-remoteport" type="number" min="1" max="65535"></label>
+                <label class="field"><span>服务器 Agent 端口</span><input id="t-agentport" type="number" min="1" max="65535"></label>
+                <div class="field"><span>浏览器访问</span><button class="btn" type="button" onclick="openDsh()">打开本地 DSH</button></div>
+              </div>
+              <div class="row end" style="margin-top:16px"><button class="btn primary" type="submit">保存并应用</button></div>
+            </form>
+          </div>
+          <div class="card">
+            <h3>隧道状态</h3>
+            <div id="tunnel-status" class="kv"></div>
+            <h3 style="margin-top:18px">最近日志</h3>
+            <div class="pre" id="tunnel-log" style="max-height:240px">—</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel hidden" data-panel="serial">
+        <div class="panel-head"><div><h2>串口</h2><p>打开 Windows COM 口，直接在浏览器里看串口输出、发命令、复位板子。</p></div><button class="btn" onclick="loadSerialData()">刷新端口</button></div>
+        <div class="split">
+          <div class="card">
+            <h3>打开串口</h3>
+            <form id="serial-form" onsubmit="openSerial(event)">
+              <div class="form-grid">
+                <label class="field"><span>端口</span><select id="s-port"></select></label>
+                <label class="field"><span>波特率</span><input id="s-baud" type="number" value="115200"></label>
+                <label class="field"><span>数据位</span><select id="s-data"><option>8</option><option>7</option><option>6</option><option>5</option></select></label>
+                <label class="field"><span>校验</span><select id="s-parity"><option value="none">none</option><option value="even">even</option><option value="odd">odd</option></select></label>
+                <label class="field"><span>停止位</span><select id="s-stop"><option value="one">1</option><option value="onepointfive">1.5</option><option value="two">2</option></select></label>
+                <label class="field"><span>流控</span><select id="s-handshake"><option value="none">none</option><option value="hardware">hardware</option><option value="xonxoff">xonxoff</option></select></label>
+                <label class="check"><input id="s-dtr" type="checkbox" checked> DTR</label>
+                <label class="check"><input id="s-rts" type="checkbox" checked> RTS</label>
+              </div>
+              <div class="row end" style="margin-top:14px"><button class="btn primary" type="submit">打开</button></div>
+            </form>
+            <h3 style="margin-top:18px">打开的会话</h3>
+            <div class="table-wrap"><table><thead><tr><th>会话</th><th>端口</th><th>状态</th><th></th></tr></thead><tbody id="serial-sessions"><tr><td colspan="4" class="muted">—</td></tr></tbody></table></div>
+          </div>
+          <div class="card">
+            <div class="spread"><h3 style="margin:0">终端 <span id="serial-active" class="badge">未打开</span></h3><div class="row"><button class="btn sm" onclick="pulseSerial('dtr')">脉冲 DTR</button><button class="btn sm" onclick="pulseSerial('rts')">脉冲 RTS</button><button class="btn sm danger" onclick="closeSerial()">关闭</button></div></div>
+            <div id="serial-terminal" class="terminal" style="margin-top:10px">打开一个串口开始读取…</div>
+            <div class="row" style="margin-top:10px"><input id="s-input" class="mono" style="flex:1" placeholder="输入命令…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendSerial()}"><select id="s-newline" style="width:100px"><option value="crlf">CRLF</option><option value="lf">LF</option><option value="none">无</option></select><button class="btn primary" onclick="sendSerial()">发送</button></div>
+            <div class="row" style="margin-top:8px"><button class="btn sm" onclick="clearSerialTerminal()">清屏</button><span id="serial-stats" class="help"></span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel hidden" data-panel="adb">
+        <div class="panel-head"><div><h2>ADB</h2><p>查看设备、执行 shell、抓日志、截图、传文件、安装 APK。</p></div><button class="btn" onclick="loadAdb()">刷新设备</button></div>
+        <div class="split">
+          <div class="card">
+            <h3>设备</h3>
+            <div id="adb-devices" class="muted">加载中…</div>
+            <h3 style="margin-top:18px">Shell</h3>
+            <div class="field"><span>命令</span><input id="adb-command" class="mono" placeholder="uname -a"></div>
+            <div class="row" style="margin-top:9px"><button class="btn primary" onclick="adbShell()">执行</button><span id="adb-shell-state" class="help"></span></div>
+            <h3 style="margin-top:18px">日志</h3>
+            <div class="row"><select id="adb-platform" style="width:110px"><option value="auto">auto</option><option value="android">android</option><option value="linux">linux</option></select><input id="adb-lines" type="number" value="100" style="width:90px"><input id="adb-filter" placeholder="filter（可选）" style="flex:1"></div>
+            <div class="row" style="margin-top:8px"><button class="btn" onclick="adbLogcat()">读取日志</button></div>
+            <h3 style="margin-top:18px">截图</h3>
+            <div class="row"><button class="btn" onclick="adbScreenshot()">截取 PNG</button><span id="adb-shot-state" class="help"></span></div>
+            <div id="adb-shot" style="margin-top:8px"></div>
+            <h3 style="margin-top:18px">重启</h3>
+            <div class="row"><select id="adb-reboot-mode" style="width:140px"><option value="">system</option><option value="bootloader">bootloader</option><option value="recovery">recovery</option><option value="sideload">sideload</option><option value="fastboot">fastboot</option></select><button class="btn" onclick="adbReboot()">重启板子</button></div>
+          </div>
+          <div class="card">
+            <h3>输出</h3>
+            <div id="adb-output" class="pre" style="min-height:300px;max-height:520px">—</div>
+            <h3 style="margin-top:18px">传输</h3>
+            <div class="field"><span>push：本地文件 → 板端路径</span><div class="row"><input id="adb-push-file" type="file" style="flex:1"><input id="adb-push-path" placeholder="/tmp/app" style="flex:1"></div></div>
+            <div class="row" style="margin-top:8px"><button class="btn" onclick="adbPush()">推送</button><span id="adb-push-state" class="help"></span></div>
+            <div class="field" style="margin-top:12px"><span>pull：板端路径 → 下载</span><div class="row"><input id="adb-pull-path" placeholder="/var/log/messages" style="flex:1"><button class="btn" onclick="adbPull()">拉取</button></div></div>
+            <div class="field" style="margin-top:12px"><span>install APK</span><div class="row"><input id="adb-install-file" type="file" accept=".apk" style="flex:1"><button class="btn" onclick="adbInstall()">安装</button></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel hidden" data-panel="windows">
+        <div class="panel-head"><div><h2>Windows 控制</h2><p>运行 cmd / PowerShell / 厂商烧录工具。默认关闭，开启后 Agent 拥有 Windows 用户权限。</p></div><button class="btn" onclick="loadJobs()">刷新任务</button></div>
+        <div class="card">
+          <div class="spread"><h3 style="margin:0">执行设置</h3><span id="exec-state" class="badge">—</span></div>
+          <form id="exec-form" onsubmit="saveExec(event)">
+            <div class="form-grid" style="margin-top:12px">
+              <label class="check"><input id="e-enabled" type="checkbox"> 启用 Windows 命令执行</label>
+              <label class="check"><input id="e-allowany" type="checkbox"> 跳过可执行文件白名单</label>
+              <label class="check"><input id="e-allowshell" type="checkbox"> 允许 cmd / PowerShell shell</label>
+              <label class="field"><span>任务上限</span><input id="e-maxjobs" type="number" min="1" max="32"></label>
+              <label class="field full"><span>可执行文件白名单（每行一个；叶名或绝对路径）</span><textarea id="e-executables" rows="5"></textarea></label>
+              <label class="field full"><span>工作目录 / 文件路径白名单（每行一个；空=不限制）</span><textarea id="e-roots" rows="4"></textarea></label>
+              <label class="field"><span>默认超时 ms</span><input id="e-defaulttimeout" type="number"></label>
+              <label class="field"><span>最大超时 ms</span><input id="e-maxtimeout" type="number"></label>
+              <label class="field"><span>最大输出字节</span><input id="e-maxoutput" type="number"></label>
+              <label class="field"><span>最大文件字节</span><input id="e-maxfile" type="number"></label>
+            </div>
+            <div class="row end" style="margin-top:14px"><button class="btn primary" type="submit">保存执行设置</button></div>
+          </form>
+        </div>
+        <div class="split section">
+          <div class="card">
+            <h3>快速执行</h3>
+            <div class="form-grid">
+              <label class="field"><span>模式</span><select id="w-mode"><option value="cmd">cmd</option><option value="powershell">powershell</option><option value="direct">direct</option></select></label>
+              <label class="field"><span>超时 ms</span><input id="w-timeout" type="number" value="30000"></label>
+              <label class="field full"><span>命令 / 可执行文件</span><input id="w-command" class="mono" placeholder="ver 或 C:\tools\flash.exe"></label>
+              <label class="field full"><span>参数（direct 模式，JSON 数组）</span><input id="w-args" class="mono" placeholder='["--port","COM26"]'></label>
+              <label class="field full"><span>cwd（可选）</span><input id="w-cwd" class="mono" placeholder="C:\work\board"></label>
+            </div>
+            <div class="row" style="margin-top:10px"><button class="btn primary" onclick="runExec()">执行并等待</button><button class="btn" onclick="startJob()">后台任务</button></div>
+            <div id="w-output" class="pre" style="margin-top:12px;min-height:160px;max-height:320px">—</div>
+          </div>
+          <div class="card">
+            <div class="spread"><h3 style="margin:0">后台任务</h3><span class="help">烧录/编译用这里</span></div>
+            <div class="table-wrap" style="margin-top:10px"><table><thead><tr><th>任务</th><th>状态</th><th>命令</th><th></th></tr></thead><tbody id="jobs-table"><tr><td colspan="4" class="muted">—</td></tr></tbody></table></div>
+            <div id="job-output" class="pre" style="margin-top:10px;min-height:140px;max-height:260px">选择一个任务查看输出。</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel hidden" data-panel="files">
+        <div class="panel-head"><div><h2>Windows 文件</h2><p>浏览、上传、下载 Windows 文件；路径同样受工作目录白名单限制。</p></div><button class="btn" onclick="loadFiles()">刷新</button></div>
+        <div class="card">
+          <div class="row"><input id="f-path" class="mono" style="flex:1" placeholder="C:\work\board"><button class="btn" onclick="loadFiles()">打开</button><button class="btn" onclick="filesUp()">上一级</button></div>
+          <div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>名称</th><th>大小</th><th>修改时间</th><th></th></tr></thead><tbody id="f-list"><tr><td colspan="4" class="muted">—</td></tr></tbody></table></div>
+          <div class="row" style="margin-top:12px"><input id="f-upload-file" type="file"><input id="f-upload-name" placeholder="上传后的文件名" style="flex:1"><button class="btn primary" onclick="uploadFile()">上传到当前目录</button></div>
+          <div id="f-state" class="help" style="margin-top:8px"></div>
+        </div>
+      </section>
+
+      <section class="panel hidden" data-panel="plugin">
+        <div class="panel-head"><div><h2>DSH 插件</h2><p>把服务器插件指向本 Agent。这里生成可直接复制的安装命令和配置。</p></div><button class="btn primary" onclick="downloadPlugin()">下载插件 ZIP</button></div>
+        <div class="split">
+          <div class="card">
+            <h3>连接参数</h3>
+            <div class="field"><span>Agent token</span><div class="row"><input id="p-token" class="mono" type="password" style="flex:1" readonly><button class="btn sm" onclick="toggleToken()">显示</button><button class="btn sm" onclick="copyValue('p-token')">复制</button></div></div>
+            <div class="field" style="margin-top:10px"><span>服务器侧 baseUrl</span><div class="row"><input id="p-baseurl" class="mono" style="flex:1" readonly><button class="btn sm" onclick="copyValue('p-baseurl')">复制</button></div></div>
+            <div class="hint-box" style="margin-top:14px">先在「隧道」页确认 remote Agent 端口（默认 18765），并把插件装到服务器。插件只依赖这个 baseUrl 和 token。</div>
+            <div class="form-grid" style="margin-top:14px">
+              <label class="field"><span>DSH profile</span><input id="p-profile" value="web" oninput="updatePluginCommand()"></label>
+              <label class="field"><span>服务器插件目录</span><input id="p-pluginpath" value="/opt/dsh-board-link" oninput="updatePluginCommand()"></label>
+            </div>
+            <h3 style="margin-top:18px">服务器安装命令</h3>
+            <div class="copy-row"><code id="p-install">dsh plugin --profile web add link:/opt/dsh-board-link</code><button class="btn sm" onclick="copyValue('p-install')">复制</button></div>
+            <div class="help">把下载的 ZIP 解压到上面的服务器目录，再执行命令。</div>
+          </div>
+          <div class="card">
+            <h3>profile 配置片段</h3>
+            <div class="help" style="margin-bottom:8px">如果不用 bundle 默认配置，把下面内容合并到服务器 <span class="mono">~/.dsh/profiles/web/cordis.patch.yml</span>。</div>
+            <pre id="p-yaml" class="pre" style="min-height:240px"></pre>
+            <div class="row"><button class="btn" onclick="copyValue('p-yaml')">复制 YAML</button><button class="btn" onclick="downloadPlugin()">下载插件 ZIP</button></div>
+            <h3 style="margin-top:18px">验证</h3>
+            <div class="help">在 DSH 里调用 <span class="mono">board_status</span>；应该看到 <span class="mono">windows exec</span> 和串口/ADB 状态。插件注册了 24 个工具。</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel hidden" data-panel="logs">
+        <div class="panel-head"><div><h2>日志</h2><p>Agent 的运行日志（滚动文件）。</p></div><button class="btn" onclick="loadLogs()">刷新</button></div>
+        <div class="card"><pre id="l-output" class="pre" style="min-height:420px;max-height:70vh">—</pre></div>
+      </section>
+
+      <section class="panel hidden" data-panel="device-logs">
+        <div class="panel-head"><div><h2>串口 / ADB 日志</h2><p>PC 串口 / ADB 的实际收发内容：串口 RX/TX、ADB 命令和输出，自动刷新。</p></div>
+          <div class="row">
+            <label class="check"><input id="dl-serial" type="checkbox" checked onchange="loadDeviceLogs(true)"> 串口</label>
+            <label class="check"><input id="dl-adb" type="checkbox" checked onchange="loadDeviceLogs(true)"> ADB</label>
+            <input id="dl-filter" class="input" style="width:200px" placeholder="过滤关键字">
+            <button id="dl-pause" class="btn" onclick="toggleDeviceLogs()">暂停</button>
+            <button class="btn" onclick="clearDeviceLogs()">清空</button>
+            <button class="btn" onclick="loadDeviceLogs(true)">刷新</button>
+          </div>
+        </div>
+        <div class="card"><pre id="dl-output" class="pre" style="min-height:520px;max-height:72vh">—</pre></div>
+      </section>
+
+    </main>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const state = { token: '', config: null, health: null, tab: 'overview', serial: null, serialLog: '', serialTimer: null, jobsTimer: null, selectedJob: null, filesPath: '', fileEntries: [], pollTimer: null };
+const fmtBytes = (n) => { n = Number(n)||0; if (n < 1024) return n + ' B'; if (n < 1048576) return (n/1024).toFixed(1) + ' KB'; if (n < 1073741824) return (n/1048576).toFixed(1) + ' MB'; return (n/1073741824).toFixed(2) + ' GB'; };
+const fmtDuration = (s) => { s = Number(s)||0; if (s < 60) return Math.floor(s)+'s'; if (s < 3600) return Math.floor(s/60)+'m'; return Math.floor(s/3600)+'h'+Math.floor((s%3600)/60)+'m'; };
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const attr = (v) => esc(v).replace(/"/g, '&quot;');
+function toast(msg, type) { const el = $('toast'); el.textContent = msg; el.className = 'toast show' + (type === 'err' ? ' err' : ''); clearTimeout(el._t); el._t = setTimeout(() => el.className = 'toast', 3600); }
+function showLogin(error) { $('app').classList.add('hidden'); $('login').classList.remove('hidden'); if (error) $('login-error').textContent = error; }
+function hideLogin() { $('login').classList.add('hidden'); $('app').classList.remove('hidden'); }
+
+async function api(path, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  if (state.token) headers.Authorization = 'Bearer ' + state.token;
+  let body = options.body;
+  if (body && typeof body !== 'string' && !(body instanceof FormData)) { headers['Content-Type'] = 'application/json'; body = JSON.stringify(body); }
+  const res = await fetch(path, { ...options, headers, body });
+  if (res.status === 401) { showLogin('token 不正确或已失效'); throw new Error('unauthorized'); }
+  const text = await res.text();
+  let data = null; try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+  if (!res.ok) throw new Error((data && data.error) ? data.error : (text || ('HTTP ' + res.status)));
+  return data;
+}
+
+async function boot() {
+  try {
+    await api('ui/api/session');
+    hideLogin();
+    await refreshAll();
+    startPolling();
+    switchTab(initialTab());
+  } catch (e) {
+    if (e.message !== 'unauthorized') showLogin(e.message);
+  }
+}
+
+async function refreshAll() {
+  try {
+    const [config, health] = await Promise.all([api('ui/api/config'), api('v1/health')]);
+    state.config = config; state.health = health;
+    renderHeader(); renderConfigPath();
+    if (state.tab === 'overview') renderOverview();
+    if (state.tab === 'tunnel') renderTunnel();
+    if (state.tab === 'windows') fillExec();
+    if (state.tab === 'plugin') renderPlugin();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function startPolling() {
+  if (state.pollTimer) clearInterval(state.pollTimer);
+  state.pollTimer = setInterval(() => { if (!document.hidden) refreshHealth(); }, 3000);
+}
+
+async function refreshHealth() {
+  try {
+    state.health = await api('v1/health');
+    renderHeader();
+    if (state.tab === 'overview') renderOverview();
+  } catch (e) { /* keep quiet while polling */ }
+}
+
+function renderHeader() {
+  const h = state.health || {}; const t = h.tunnel || {};
+  $('hostname').textContent = h.hostname ? `${h.hostname} · Windows` : 'Windows board lab';
+  $('version-pill').textContent = 'v' + (h.version || '0.1.0');
+  const dot = $('tunnel-dot'); const txt = $('tunnel-text');
+  const st = t.state || 'unknown';
+  dot.className = 'dot ' + (st === 'running' ? 'ok' : (st === 'starting' || st === 'backoff' ? 'warn' : (st === 'failed' || st === 'not-configured' ? 'bad' : '')));
+  txt.textContent = 'tunnel: ' + st;
+  $('agent-dot').className = 'dot ' + (h.ok ? 'ok' : 'bad');
+  $('agent-text').textContent = 'agent: ' + (h.ok ? 'online' : 'offline');
+  const action = $('tunnel-action');
+  if (st === 'running' || st === 'starting' || st === 'backoff') { action.textContent = '停止隧道'; action.onclick = () => tunnelAction('stop'); }
+  else { action.textContent = '启动隧道'; action.onclick = () => tunnelAction('start'); }
+}
+
+function renderConfigPath() { $('config-path').textContent = state.config?.agent?.configPath || ''; }
+
+function renderOverview() {
+  const h = state.health || {}; const c = state.config || {}; const t = h.tunnel || {}; const s = h.serial || {}; const a = h.adb || {}; const e = h.exec || {};
+  const ports = (s.ports || []).map(p => p.name).join(', ') || '无';
+  const sessions = s.sessions || [];
+  const devices = a.devices || [];
+  $('overview-cards').innerHTML = `
+    <div class="card clickable" onclick="switchTab('tunnel')"><h3>隧道</h3><div class="big">${esc(t.state || 'unknown')}</div><div class="sub">${esc(t.target || '未配置 SSH 目标')}</div><div class="sub">${t.pid ? 'pid ' + t.pid : ''}</div></div>
+    <div class="card clickable" onclick="switchTab('serial')"><h3>串口</h3><div class="big">${(s.ports || []).length}</div><div class="sub">${esc(ports)}</div><div class="sub">${sessions.length} 个会话打开</div></div>
+    <div class="card clickable" onclick="switchTab('adb')"><h3>ADB</h3><div class="big">${a.available ? devices.length : '—'}</div><div class="sub">${a.available ? esc(devices.map(d => d.serial + ' (' + d.state + ')').join(', ') || '无设备') : esc(a.error || '不可用')}</div></div>
+    <div class="card clickable" onclick="switchTab('windows')"><h3>Windows 控制</h3><div class="big">${e.enabled ? 'ON' : 'OFF'}</div><div class="sub">shell=${e.allowShell ? 'on' : 'off'} · jobs ${e.runningJobs || 0}/${e.maxJobs || 0}</div></div>`;
+  $('overview-log').textContent = (t.recentLog || []).slice(-12).join('\n') || '—';
+  if (t.lastError) $('overview-log').textContent += '\n\n错误: ' + t.lastError;
+}
+
+function renderTunnel() {
+  const c = state.config; if (!c) return;
+  const t = c.tunnel || {};
+  $('t-enabled').checked = !!t.enabled;
+  $('t-target').value = t.target || '';
+  $('t-sshport').value = t.port || 22;
+  $('t-identity').value = t.identityFile || '';
+  $('t-knownhosts').value = t.knownHostsFile || '';
+  $('t-strict').value = t.strictHostKeyChecking || 'accept-new';
+  $('t-restart').checked = t.restartEnabled !== false;
+  $('t-localport').value = t.localDshPort || 60573;
+  $('t-remoteport').value = t.remoteDshPort || 60573;
+  $('t-agentport').value = t.remoteAgentPort || 18765;
+  const s = t.status || {};
+  $('tunnel-status').innerHTML = `
+    <dt>状态</dt><dd><span class="badge ${s.state === 'running' ? 'ok' : s.state === 'failed' ? 'bad' : 'warn'}">${esc(s.state || 'unknown')}</span></dd>
+    <dt>PID</dt><dd>${s.pid ?? '—'}</dd>
+    <dt>目标</dt><dd>${esc(s.target || '—')}</dd>
+    <dt>重启次数</dt><dd>${s.restarts ?? 0}</dd>
+    <dt>最后错误</dt><dd>${esc(s.lastError || '—')}</dd>
+    <dt>转发</dt><dd>${(s.forwards || []).map(f => esc(f.direction + ' ' + f.listenHost + ':' + f.listenPort + ' → ' + f.targetHost + ':' + f.targetPort)).join('<br>') || '—'}</dd>`;
+  $('tunnel-log').textContent = (s.recentLog || []).join('\n') || '—';
+}
+
+async function saveTunnel(event) {
+  event.preventDefault();
+  const body = { tunnel: {
+    enabled: $('t-enabled').checked,
+    target: $('t-target').value,
+    port: Number($('t-sshport').value),
+    identityFile: $('t-identity').value,
+    knownHostsFile: $('t-knownhosts').value,
+    strictHostKeyChecking: $('t-strict').value,
+    localDshPort: Number($('t-localport').value),
+    remoteDshPort: Number($('t-remoteport').value),
+    remoteAgentPort: Number($('t-agentport').value),
+    restartEnabled: $('t-restart').checked,
+  }};
+  try { await api('ui/api/config', { method: 'POST', body }); toast('隧道配置已保存'); await refreshAll(); }
+  catch (e) { toast(e.message, 'err'); }
+}
+
+async function tunnelAction(action) {
+  try { await api('v1/tunnel/' + action, { method: 'POST' }); toast(action === 'stop' ? '隧道已停止' : '隧道启动中'); setTimeout(refreshAll, 800); }
+  catch (e) { toast(e.message, 'err'); }
+}
+
+function openDsh() {
+  const port = state.config?.tunnel?.localDshPort || 60573;
+  window.open('http://127.0.0.1:' + port + '/', '_blank', 'noopener');
+}
+
+/* ---------------- Serial ---------------- */
+async function loadSerialData() {
+  try {
+    const [p, s] = await Promise.all([api('v1/serial/ports'), api('v1/serial/sessions')]);
+    const ports = p.ports || [];
+    const sel = $('s-port'); const current = sel.value;
+    sel.innerHTML = ports.length ? ports.map(x => `<option value="${attr(x.name)}">${esc(x.name)}${x.device ? ' · ' + esc(x.device) : ''}</option>`).join('') : '<option value="">未发现串口</option>';
+    if (current && ports.some(x => x.name === current)) sel.value = current;
+    const sessions = s.sessions || [];
+    $('serial-sessions').innerHTML = sessions.length ? sessions.map(x => `<tr><td class="mono">${esc(x.sessionId)}</td><td>${esc(x.port)}</td><td><span class="badge ${x.faulted ? 'bad' : 'ok'}">${x.faulted ? 'faulted' : 'open'}</span></td><td><button class="btn sm" onclick="closeSession('${attr(x.sessionId)}')">关闭</button></td></tr>`).join('') : '<tr><td colspan="4" class="muted">没有打开的会话</td></tr>';
+    if (!state.serial) {
+      $('serial-active').textContent = '未打开'; $('serial-active').className = 'badge';
+    }
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function openSerial(event) {
+  event.preventDefault();
+  const body = { port: $('s-port').value, baudRate: Number($('s-baud').value), dataBits: Number($('s-data').value), parity: $('s-parity').value, stopBits: $('s-stop').value, handshake: $('s-handshake').value, dtr: $('s-dtr').checked, rts: $('s-rts').checked };
+  try {
+    const s = await api('v1/serial/open', { method: 'POST', body });
+    state.serial = s.sessionId; state.serialLog = '';
+    $('serial-terminal').textContent = `[已打开 ${s.port} @ ${s.baudRate} 8N1，session ${s.sessionId}]\n`;
+    $('serial-active').textContent = s.port + ' 已打开'; $('serial-active').className = 'badge ok';
+    startSerialPoll(); await loadSerialData();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function startSerialPoll() {
+  if (state.serialTimer) clearTimeout(state.serialTimer);
+  const tick = async () => {
+    if (!state.serial) return;
+    try {
+      const r = await api('v1/serial/read', { method: 'POST', body: { sessionId: state.serial, timeoutMs: 0, maxBytes: 16384 } });
+      if (r.bytes) { state.serialLog += r.text || ''; const term = $('serial-terminal'); term.textContent += r.text || ''; term.scrollTop = term.scrollHeight; }
+      $('serial-stats').textContent = `收到 ${r.totalBytesIn || 0} B · 缓冲 ${r.bufferedBytes || 0} B` + (r.droppedBytes ? ` · 丢弃 ${r.droppedBytes} B` : '');
+      if (r.faulted) { toast('串口读取故障: ' + (r.error || ''), 'err'); return; }
+    } catch (e) { /* session may be closed */ }
+    if (state.serial) state.serialTimer = setTimeout(tick, 350);
+  };
+  tick();
+}
+
+async function sendSerial() {
+  if (!state.serial) { toast('先打开串口', 'err'); return; }
+  const text = $('s-input').value; if (!text) return;
+  try {
+    await api('v1/serial/write', { method: 'POST', body: { sessionId: state.serial, text, newline: $('s-newline').value } });
+    $('s-input').value = '';
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function closeSerial() {
+  if (!state.serial) return;
+  const id = state.serial; state.serial = null;
+  if (state.serialTimer) { clearTimeout(state.serialTimer); state.serialTimer = null; }
+  try { await api('v1/serial/close', { method: 'POST', body: { sessionId: id } }); } catch {}
+  $('serial-active').textContent = '未打开'; $('serial-active').className = 'badge';
+  $('serial-terminal').textContent += '\n[会话已关闭]\n';
+  await loadSerialData();
+}
+
+async function closeSession(id) {
+  try { await api('v1/serial/close', { method: 'POST', body: { sessionId: id } }); if (state.serial === id) { state.serial = null; if (state.serialTimer) clearTimeout(state.serialTimer); $('serial-active').textContent = '未打开'; $('serial-active').className = 'badge'; } await loadSerialData(); }
+  catch (e) { toast(e.message, 'err'); }
+}
+
+async function pulseSerial(line) {
+  if (!state.serial) { toast('先打开串口', 'err'); return; }
+  try { await api('v1/serial/pulse', { method: 'POST', body: { sessionId: state.serial, line, durationMs: 100 } }); toast('已脉冲 ' + line.toUpperCase()); }
+  catch (e) { toast(e.message, 'err'); }
+}
+function clearSerialTerminal() { $('serial-terminal').textContent = ''; }
+
+/* ---------------- ADB ---------------- */
+async function loadAdb() {
+  try {
+    const s = await api('v1/adb/status');
+    const devices = s.devices || [];
+    $('adb-devices').innerHTML = !s.available ? `<span class="badge bad">不可用</span> <span class="help">${esc(s.error || '')}</span>` : (devices.length ? devices.map(d => `<div class="row" style="margin:5px 0"><span class="badge ${d.state === 'device' ? 'ok' : 'warn'}">${esc(d.state)}</span><span class="mono">${esc(d.serial)}</span><span class="help">${esc([d.model, d.product, d.device].filter(Boolean).join(' · '))}</span></div>`).join('') : '<span class="muted">没有设备</span>');
+  } catch (e) { $('adb-devices').innerHTML = `<span class="badge bad">错误</span> <span class="help">${esc(e.message)}</span>`; }
+}
+function adbSerial() { const first = (state.health?.adb?.devices || []).find(d => d.state === 'device'); return first ? first.serial : undefined; }
+function adbOut(label, text) { $('adb-output').textContent = (label ? '> ' + label + '\n' : '') + (text || '—'); }
+async function adbShell() {
+  const cmd = $('adb-command').value.trim(); if (!cmd) return;
+  $('adb-shell-state').textContent = '执行中…';
+  try { const r = await api('v1/adb/shell', { method: 'POST', body: { serial: adbSerial(), command: cmd, timeoutMs: 30000 } }); adbOut('adb shell ' + cmd, `exit ${r.exitCode}\n${r.stdout || ''}${r.stderr ? '\n[stderr]\n' + r.stderr : ''}`); $('adb-shell-state').textContent = 'exit ' + r.exitCode; }
+  catch (e) { $('adb-shell-state').textContent = ''; toast(e.message, 'err'); }
+}
+async function adbLogcat() {
+  try { const r = await api('v1/adb/logcat', { method: 'POST', body: { serial: adbSerial(), lines: Number($('adb-lines').value) || 100, platform: $('adb-platform').value, filter: $('adb-filter').value || undefined, timeoutMs: 30000 } }); adbOut(`logcat (${r.platform || 'auto'})`, `exit ${r.exitCode}\n${r.stdout || ''}${r.stderr ? '\n[stderr]\n' + r.stderr : ''}`); }
+  catch (e) { toast(e.message, 'err'); }
+}
+async function adbScreenshot() {
+  $('adb-shot-state').textContent = '截取中…';
+  try { const r = await api('v1/adb/screenshot', { method: 'POST', body: { serial: adbSerial() } }); $('adb-shot').innerHTML = `<img alt="screenshot" style="max-width:100%;border:1px solid var(--line);border-radius:10px" src="data:image/png;base64,${r.dataBase64}"><div class="help">${fmtBytes(r.bytes)}</div><a class="btn sm" download="screenshot.png" href="data:image/png;base64,${r.dataBase64}">下载</a>`; $('adb-shot-state').textContent = '完成'; }
+  catch (e) { $('adb-shot-state').textContent = ''; toast(e.message, 'err'); }
+}
+async function adbPush() {
+  const f = $('adb-push-file').files[0]; const remote = $('adb-push-path').value.trim();
+  if (!f || !remote) { toast('选择文件并填写板端路径', 'err'); return; }
+  $('adb-push-state').textContent = '读取文件…';
+  try { const b64 = await fileBase64(f); const r = await api('v1/adb/push', { method: 'POST', body: { serial: adbSerial(), remotePath: remote, dataBase64: b64 } }); $('adb-push-state').textContent = 'exit ' + r.exitCode; adbOut('adb push ' + f.name, r.stdout + (r.stderr ? '\n' + r.stderr : '')); }
+  catch (e) { $('adb-push-state').textContent = ''; toast(e.message, 'err'); }
+}
+async function adbPull() {
+  const remote = $('adb-pull-path').value.trim(); if (!remote) return;
+  try { const r = await api('v1/adb/pull', { method: 'POST', body: { serial: adbSerial(), remotePath: remote } }); downloadBase64(remote.split('/').pop() || 'pulled.bin', r.dataBase64); adbOut('adb pull ' + remote, `${fmtBytes(r.bytes)} 已下载`); }
+  catch (e) { toast(e.message, 'err'); }
+}
+async function adbInstall() {
+  const f = $('adb-install-file').files[0]; if (!f) { toast('选择 APK', 'err'); return; }
+  try { const b64 = await fileBase64(f); const r = await api('v1/adb/install', { method: 'POST', body: { serial: adbSerial(), apkBase64: b64 } }); adbOut('adb install ' + f.name, `exit ${r.exitCode}\n${r.stdout || ''}${r.stderr ? '\n' + r.stderr : ''}`); }
+  catch (e) { toast(e.message, 'err'); }
+}
+async function adbReboot() {
+  try { const r = await api('v1/adb/reboot', { method: 'POST', body: { serial: adbSerial(), mode: $('adb-reboot-mode').value || undefined } }); adbOut('adb reboot', r.stdout || r.stderr || '已发送'); }
+  catch (e) { toast(e.message, 'err'); }
+}
+
+/* ---------------- Windows ---------------- */
+function fillExec() {
+  const e = state.config?.exec; if (!e) return;
+  $('e-enabled').checked = !!e.enabled; $('e-allowany').checked = !!e.allowAny; $('e-allowshell').checked = !!e.allowShell;
+  $('e-executables').value = e.allowedExecutables || ''; $('e-roots').value = e.allowedWorkingRoots || '';
+  $('e-maxjobs').value = e.maxJobs || 8; $('e-defaulttimeout').value = e.defaultTimeoutMs || 120000; $('e-maxtimeout').value = e.maxTimeoutMs || 600000;
+  $('e-maxoutput').value = e.maxOutputBytes || 4194304; $('e-maxfile').value = e.maxFileBytes || 67108864;
+  $('exec-state').textContent = e.enabled ? '已启用' : '已关闭'; $('exec-state').className = 'badge ' + (e.enabled ? (e.allowShell ? 'warn' : 'ok') : '');
+}
+async function saveExec(event) {
+  event.preventDefault();
+  const body = { exec: {
+    enabled: $('e-enabled').checked, allowAny: $('e-allowany').checked, allowShell: $('e-allowshell').checked,
+    allowedExecutables: $('e-executables').value, allowedWorkingRoots: $('e-roots').value,
+    maxJobs: Number($('e-maxjobs').value), defaultTimeoutMs: Number($('e-defaulttimeout').value), maxTimeoutMs: Number($('e-maxtimeout').value),
+    maxOutputBytes: Number($('e-maxoutput').value), maxFileBytes: Number($('e-maxfile').value),
+  }};
+  try { await api('ui/api/config', { method: 'POST', body }); toast('执行设置已保存'); await refreshAll(); }
+  catch (e) { toast(e.message, 'err'); }
+}
+function execBody() {
+  let args; try { args = $('w-args').value.trim() ? JSON.parse($('w-args').value) : undefined; } catch { throw new Error('参数不是合法 JSON 数组'); }
+  return { mode: $('w-mode').value, command: $('w-command').value, args, cwd: $('w-cwd').value || undefined, timeoutMs: Number($('w-timeout').value) || 30000 };
+}
+async function runExec() {
+  try { $('w-output').textContent = '执行中…'; const r = await api('v1/exec', { method: 'POST', body: execBody() }); $('w-output').textContent = `exit ${r.exitCode} · ${r.state} · ${r.durationMs} ms\n\n${r.stdout || ''}${r.stderr ? '\n[stderr]\n' + r.stderr : ''}`; }
+  catch (e) { $('w-output').textContent = '错误: ' + e.message; toast(e.message, 'err'); }
+}
+async function startJob() {
+  try { const r = await api('v1/jobs', { method: 'POST', body: execBody() }); toast('任务已启动: ' + r.jobId); state.selectedJob = r.jobId; await loadJobs(); selectJob(r.jobId); }
+  catch (e) { toast(e.message, 'err'); }
+}
+async function loadJobs() {
+  try { const r = await api('v1/jobs'); const jobs = r.jobs || []; $('jobs-table').innerHTML = jobs.length ? jobs.map(j => `<tr><td class="mono">${esc(j.jobId)}</td><td><span class="badge ${j.state === 'succeeded' ? 'ok' : j.state === 'running' ? 'run' : 'warn'}">${esc(j.state)}</span></td><td class="help">${esc((j.command || '').slice(0, 80))}</td><td><button class="btn sm" onclick="selectJob('${attr(j.jobId)}')">输出</button> <button class="btn sm danger" onclick="killJob('${attr(j.jobId)}')">终止</button></td></tr>`).join('') : '<tr><td colspan="4" class="muted">没有任务</td></tr>'; }
+  catch (e) { /* ignore polling errors */ }
+}
+async function selectJob(id) {
+  state.selectedJob = id;
+  try { const j = await api('v1/jobs/' + encodeURIComponent(id) + '?tailChars=12000'); $('job-output').textContent = `${j.jobId} · ${j.state} · exit=${j.exitCode ?? '?'} · ${j.durationMs} ms${j.timedOut ? ' [TIMEOUT]' : ''}${j.killed ? ' [KILLED]' : ''}\n\n${j.stdoutTail || ''}${j.stderrTail ? '\n[stderr]\n' + j.stderrTail : ''}${j.error ? '\n[error] ' + j.error : ''}`; if (j.state === 'running') { clearTimeout(state.jobsTimer); state.jobsTimer = setTimeout(() => selectJob(id), 1500); } }
+  catch (e) { $('job-output').textContent = '错误: ' + e.message; }
+}
+async function killJob(id) {
+  try { await api('v1/jobs/' + encodeURIComponent(id) + '/kill', { method: 'POST' }); toast('已发送终止'); await loadJobs(); selectJob(id); }
+  catch (e) { toast(e.message, 'err'); }
+}
+
+/* ---------------- Files ---------------- */
+async function loadFiles() {
+  const p = $('f-path').value.trim() || state.filesPath || 'C:\\';
+  try {
+    const r = await api('v1/files/list?path=' + encodeURIComponent(p));
+    state.filesPath = r.path; $('f-path').value = r.path;
+    const entries = r.entries || []; state.fileEntries = entries;
+    $('f-list').innerHTML = entries.length ? entries.map((e, i) => `<tr><td>${e.isDirectory ? '<span class="badge">DIR</span> ' : ''}<a href="#" onclick="return openEntry(${i})">${esc(e.name)}</a></td><td class="help">${e.isDirectory ? '—' : fmtBytes(e.length)}</td><td class="help">${esc(new Date(e.lastWriteUtc).toLocaleString())}</td><td>${e.isDirectory ? '' : `<button class="btn sm" onclick="downloadEntry(${i})">下载</button>`}</td></tr>`).join('') : '<tr><td colspan="4" class="muted">空目录</td></tr>';
+  } catch (e) { toast(e.message, 'err'); }
+}
+function openEntry(i) {
+  const e = state.fileEntries?.[i]; if (!e) return false;
+  if (e.isDirectory) { $('f-path').value = e.path; loadFiles(); }
+  else downloadFile(e.path);
+  return false;
+}
+function downloadEntry(i) { const e = state.fileEntries?.[i]; if (e) downloadFile(e.path); }
+async function downloadFile(p) {
+  try { const r = await api('v1/files/read', { method: 'POST', body: { path: p } }); downloadBase64(p.split(/[\\/]/).pop() || 'file.bin', r.dataBase64); }
+  catch (e) { toast(e.message, 'err'); }
+}
+function filesUp() { const p = $('f-path').value.replace(/[\\/]+$/, ''); const i = Math.max(p.lastIndexOf('\\'), p.lastIndexOf('/')); if (i > 2) $('f-path').value = p.slice(0, i); loadFiles(); }
+async function uploadFile() {
+  const f = $('f-upload-file').files[0]; if (!f) { toast('选择文件', 'err'); return; }
+  const name = $('f-upload-name').value.trim() || f.name; const p = (state.filesPath || $('f-path').value).replace(/[\\/]+$/, '') + '\\' + name;
+  try { const b64 = await fileBase64(f); const r = await api('v1/files/write', { method: 'POST', body: { path: p, dataBase64: b64, overwrite: true } }); $('f-state').textContent = `已写入 ${r.path} (${fmtBytes(r.bytes)})`; await loadFiles(); }
+  catch (e) { $('f-state').textContent = ''; toast(e.message, 'err'); }
+}
+
+/* ---------------- Plugin ---------------- */
+function renderPlugin() {
+  const c = state.config; if (!c) return;
+  $('p-token').value = c.token || '';
+  const base = `http://127.0.0.1:${c.tunnel?.remoteAgentPort || 18765}`;
+  $('p-baseurl').value = base;
+  const yaml = `- id: board-link\n  config:\n    baseUrl: '${base}'\n    timeoutMs: 15000\n    token: '${(c.token || '').replace(/'/g, "''")}'\n`;
+  $('p-yaml').textContent = yaml;
+  updatePluginCommand();
+}
+function updatePluginCommand() {
+  const profile = ($('p-profile')?.value || 'web').trim() || 'web';
+  const pluginPath = ($('p-pluginpath')?.value || '/opt/dsh-board-link').trim() || '/opt/dsh-board-link';
+  $('p-install').textContent = `dsh plugin --profile ${profile} add link:${pluginPath}`;
+}
+function toggleToken() { const el = $('p-token'); el.type = el.type === 'password' ? 'text' : 'password'; }
+function copyValue(id) { const el = $(id); const text = el.value !== undefined && el.value !== null ? el.value : el.textContent; copy(text); }
+async function copy(text) { try { await navigator.clipboard.writeText(text); toast('已复制'); } catch { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); toast('已复制'); } }
+async function downloadPlugin() {
+  try { const res = await fetch('ui/api/plugin.zip', { headers: { Authorization: 'Bearer ' + state.token } }); if (!res.ok) throw new Error('下载失败 HTTP ' + res.status); const blob = await res.blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'dsh-board-link.zip'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 3000); }
+  catch (e) { toast(e.message, 'err'); }
+}
+
+/* ---------------- Logs ---------------- */
+async function loadLogs() { try { const r = await api('ui/api/logs?lines=500'); $('l-output').textContent = r.text || '（日志为空）'; } catch (e) { toast(e.message, 'err'); } }
+
+/* ---------------- Serial / ADB log tab ---------------- */
+state.deviceLogPaused = false;
+state.deviceLogTimer = null;
+async function loadDeviceLogs(force = false) {
+  if (state.deviceLogPaused && !force) return;
+  try {
+    const r = await api('ui/api/device-io?limit=1000');
+    const filter = ($('dl-filter')?.value || '').trim().toLowerCase();
+    const showSerial = $('dl-serial')?.checked ?? true;
+    const showAdb = $('dl-adb')?.checked ?? true;
+    const entries = (r.entries || []).filter(entry => {
+      if (!((entry.kind === 'serial' && showSerial) || (entry.kind === 'adb' && showAdb))) return false;
+      const haystack = `${entry.direction || ''} ${entry.text || ''}`.toLowerCase();
+      return !filter || haystack.includes(filter);
+    });
+    const pre = $('dl-output');
+    if (!pre) return;
+    const atBottom = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 24;
+    const emptyText = (!showSerial && !showAdb)
+      ? '（请至少勾选串口或 ADB）'
+      : '（暂无串口 / ADB 收发内容）';
+    const labels = { rx: 'RX', tx: 'TX', out: 'OUT', err: 'ERR', cmd: 'CMD', info: 'INFO' };
+    const chunks = entries.map(entry => {
+      const d = new Date(entry.at);
+      const time = Number.isNaN(d.getTime()) ? '--:--:--' : d.toLocaleTimeString('zh-CN', { hour12: false });
+      const kind = entry.kind === 'serial' ? '串口' : 'ADB';
+      const dir = labels[entry.direction] || (entry.direction || '').toUpperCase();
+      const body = String(entry.text || '')
+        .replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, '')
+        .replace(/\u001b\][^\u0007]*(?:\u0007|\u001b\\)/g, '')
+        .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
+        .replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n$/, '');
+      return `[${time}] ${kind} ${dir}\n${body}`;
+    });
+    pre.textContent = chunks.length ? chunks.join('\n\n') : emptyText;
+    if (atBottom) pre.scrollTop = pre.scrollHeight;
+  } catch (e) { /* keep previous output */ }
+}
+
+function startDeviceLogs() {
+  stopDeviceLogs();
+  state.deviceLogPaused = false;
+  const btn = $('dl-pause'); if (btn) btn.textContent = '暂停';
+  loadDeviceLogs(true);
+  state.deviceLogTimer = setInterval(() => loadDeviceLogs(), 1500);
+}
+function stopDeviceLogs() {
+  if (state.deviceLogTimer) { clearInterval(state.deviceLogTimer); state.deviceLogTimer = null; }
+}
+function toggleDeviceLogs() {
+  state.deviceLogPaused = !state.deviceLogPaused;
+  const btn = $('dl-pause');
+  if (btn) btn.textContent = state.deviceLogPaused ? '继续' : '暂停';
+  if (!state.deviceLogPaused) loadDeviceLogs(true);
+}
+async function clearDeviceLogs() {
+  try { await api('ui/api/device-io/clear', { method: 'POST' }); } catch (e) { /* ignore */ }
+  const pre = $('dl-output');
+  if (pre) pre.textContent = '';
+  toast('已清空串口 / ADB 输出');
+}
+
+/* ---------------- Helpers ---------------- */
+function fileBase64(file) { return new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(String(r.result).split(',')[1] || ''); r.onerror = reject; r.readAsDataURL(file); }); }
+function downloadBase64(name, b64) { const a = document.createElement('a'); a.href = 'data:application/octet-stream;base64,' + b64; a.download = name; a.click(); }
+
+/* ---------------- Tabs / login ---------------- */
+function initialTab() {
+  const valid = ['overview', 'tunnel', 'serial', 'adb', 'windows', 'files', 'plugin', 'logs', 'device-logs'];
+  const hash = location.hash.replace('#', '');
+  return valid.includes(hash) ? hash : 'overview';
+}
+function switchTab(tab) {
+  state.tab = tab;
+  if (tab !== 'device-logs') stopDeviceLogs();
+  if (location.hash !== '#' + tab) history.replaceState(null, '', location.pathname + location.search + '#' + tab);
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('[data-panel]').forEach(p => p.classList.toggle('hidden', p.dataset.panel !== tab));
+  if (tab === 'overview') renderOverview();
+  if (tab === 'tunnel') renderTunnel();
+  if (tab === 'serial') loadSerialData();
+  if (tab === 'adb') loadAdb();
+  if (tab === 'windows') { fillExec(); loadJobs(); }
+  if (tab === 'files') { if (!state.filesPath) { state.filesPath = $('f-path').value || 'C:\\'; } loadFiles(); }
+  if (tab === 'plugin') renderPlugin();
+  if (tab === 'logs') loadLogs();
+  if (tab === 'device-logs') startDeviceLogs();
+}
+function logout() { state.token = ''; sessionStorage.removeItem('dshLinkToken'); showLogin(); }
+async function shutdownAgent() {
+  if (!confirm('停止 Windows Agent？隧道、串口会话和后台任务都会结束。')) return;
+  try { await api('v1/shutdown', { method: 'POST' }); toast('Agent 正在退出…'); $('app').classList.add('hidden'); $('login').classList.remove('hidden'); }
+  catch (e) { toast(e.message, 'err'); }
+}
+$('login-btn').onclick = async () => {
+  const token = $('login-token').value.trim(); if (!token) return;
+  state.token = token; $('login-error').textContent = '';
+  try { await api('ui/api/session'); sessionStorage.setItem('dshLinkToken', token); hideLogin(); await refreshAll(); startPolling(); switchTab(initialTab()); }
+  catch (e) { showLogin(e.message === 'unauthorized' ? 'token 不正确' : e.message); }
+};
+$('login-token').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('login-btn').click(); });
+window.addEventListener('DOMContentLoaded', async () => {
+  const params = new URLSearchParams(location.search);
+  const fromUrl = params.get('token');
+  const saved = sessionStorage.getItem('dshLinkToken');
+  if (fromUrl) { state.token = fromUrl; sessionStorage.setItem('dshLinkToken', fromUrl); history.replaceState({}, '', location.pathname + location.hash); }
+  else if (saved) state.token = saved;
+  // The DSH panel proxy injects the Agent token server-side, so try boot
+  // even without a URL/session token; a direct 401 still leaves the login page.
+  await boot();
+  $('login-token').focus();
+});
+</script>
+</body>
+</html>
